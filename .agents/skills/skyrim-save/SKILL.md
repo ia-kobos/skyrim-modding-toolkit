@@ -1,7 +1,6 @@
 ---
 name: skyrim-save
 description: Read and scan Skyrim save files (.ess). Use when debugging save issues, searching for orphaned scripts, checking mod footprint in saves, or investigating save bloat.
-paths: "**/*.ess"
 ---
 
 # Save File Analysis

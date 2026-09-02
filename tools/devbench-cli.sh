@@ -1,7 +1,7 @@
 #!/bin/bash
 # devbench-cli.sh -- talk to a RUNNING Skyrim via alandtse's DevBench SKSE plugin.
 #
-# DevBench (Nexus SE 181326) runs a localhost REST+MCP server inside the live game, so Claude can
+# DevBench (Nexus SE 181326) runs a localhost REST+MCP server inside the live game, so Codex can
 # inspect state, run console commands AND READ THEIR OUTPUT, call Papyrus functions, and drive
 # scripted scenarios -- instead of you hand-testing and reporting back.
 #

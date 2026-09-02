@@ -3,7 +3,7 @@
 **This is not part of the default devcontainer, and it's unvalidated beyond one experiment.**
 Credit: this recipe comes from [@aaronputty](https://github.com/aaronputty)'s fork,
 [putty-skyrim-claude-toolkit](https://github.com/aaronputty/putty-skyrim-claude-toolkit), where they
-used it (with Claude's help) to cross-compile a pre-pivot version of
+used it (with an AI assistant's help) to cross-compile a pre-pivot version of
 [Mora](https://github.com/halgari/mora), an SKSE plugin, entirely from a Linux container. Their own
 assessment: "I have no idea if this works with any other SKSE plugin source." Treat this as a
 starting point, not a proven pipeline.

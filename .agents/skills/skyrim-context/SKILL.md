@@ -1,8 +1,6 @@
 ---
 name: skyrim-context
-description: Skyrim modding context and VR-specific gotchas. Auto-loads when working with Papyrus scripts, ESP-related files, or Data/ contents.
-user-invocable: false
-paths: "**/*.psc,**/*.pex,Data/**,**/*.ini"
+description: Apply Skyrim modding and VR-specific safety context when working with Papyrus, plugins, INIs, meshes, archives, saves, or files under a mod's Data tree.
 ---
 
 # Skyrim Modding Context
@@ -13,7 +11,7 @@ You are working in a modded Skyrim installation with a full modding toolkit. Con
 
 1. **RemoveSpell doesn't fire OnEffectFinish** — use `DispelSpell` when cleanup logic exists (but DispelSpell excludes abilities)
 2. **All effects on a spell must have the same casting type** — mismatches cause silent failure
-3. **VMAD editing is fragile** — use `GetFormFromFile()` to minimize properties; xEdit can't add scripts to VMAD
+3. **VMAD editing is fragile** — keep required records in your own plugin, minimize attached properties, and avoid soft dependencies on other mods
 4. **PlayIdle fails in VR** — VRIK overrides skeleton IK; bypass with timed Papyrus scripts
 5. **Wait() unreliable under 100ms** — merge sub-100ms gaps; use `RegisterForSingleUpdate` when possible
 6. **SSE != VR** for: camera, skeleton, collision, UI, input, SKSE addresses, physics (60Hz→90Hz)

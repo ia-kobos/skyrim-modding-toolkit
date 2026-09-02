@@ -1,7 +1,6 @@
 ---
 name: skyrim-audio
 description: Process Skyrim voice and sound files (FUZ, XWM, WAV) using AutoMod CLI.
-paths: "**/*.fuz,**/*.xwm,**/*.wav,Data/Sound/**"
 ---
 
 # Audio File Operations

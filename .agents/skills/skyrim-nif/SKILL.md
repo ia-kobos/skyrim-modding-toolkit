@@ -1,7 +1,6 @@
 ---
 name: skyrim-nif
 description: Inspect and modify NIF mesh files using AutoMod CLI. Use when working with meshes, textures, skeleton nodes, or fixing VR mesh issues.
-paths: "**/*.nif,Data/meshes/**"
 ---
 
 # NIF Mesh Operations

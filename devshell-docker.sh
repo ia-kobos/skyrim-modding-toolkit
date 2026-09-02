@@ -24,7 +24,7 @@ IMAGE_TAG="skyrim-toolkit"
 CONTAINER_NAME="skyrim-toolkit-dev"
 DC_JSON="$SCRIPT_DIR/.devcontainer/devcontainer.json"
 
-command -v jq >/dev/null 2>&1 || { echo "ERROR: jq is required (the toolkit already depends on it for the safety hooks)."; exit 1; }
+command -v jq >/dev/null 2>&1 || { echo "ERROR: jq is required to read the devcontainer mount configuration."; exit 1; }
 [ -f "$DC_JSON" ] || { echo "ERROR: $DC_JSON not found."; exit 1; }
 
 mount_source() { # $1 = target path inside the container

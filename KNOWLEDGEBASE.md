@@ -355,7 +355,7 @@ A living document of quirks, gotchas, and hard-won lessons about Skyrim modding 
 
 ### XEditLib.dll (Delphi FFI)
 
-- See CLAUDE.md for the full list of quirks (UCS-2 strings, void Init/Close, uint16 WordBool, GetResultString pattern).
+- See AGENTS.md for the full list of quirks (UCS-2 strings, void Init/Close, uint16 WordBool, GetResultString pattern).
 - Game mode: always use `GM_SSE` (4) for both Skyrim SE and Skyrim VR.
 - Registry: reads from `Skyrim Special Edition` key, not `Skyrim VR`.
 
@@ -1561,7 +1561,7 @@ a portable instance keeps everything in MO2's own install folder. Either way the
 the optional `base_directory`, `mod_directory`, `profiles_directory`, `overwrite_directory` overrides,
 which may contain the literal token `%BASE_DIR%`. Values are QSettings-escaped (backslashes doubled).
 Match an instance to a game folder by comparing its `gamePath`. `setup.sh` does all of this
-automatically and writes the correct paths into CLAUDE.md.
+automatically and writes the correct paths into AGENTS.md.
 
 ### The silent-wrong-answer trap: load-order tooling outside MO2
 

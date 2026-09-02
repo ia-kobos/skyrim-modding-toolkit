@@ -6,7 +6,7 @@
 # Git Bash even on complete success -- node's stdio flush fails during shutdown
 # while XEditLib.dll is still resident. It is not reachable from JS. So the
 # script prints a RESULT: line and this wrapper judges THAT, never $?.
-# See CLAUDE.md #12.
+# See the skyrim-winner notes in AGENTS.md.
 #
 # Usage:
 #   bash tools/skyrim-winner.sh winner    <formid> [plugin]

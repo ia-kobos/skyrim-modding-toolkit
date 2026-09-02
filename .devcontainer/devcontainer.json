@@ -1,5 +1,5 @@
 {
-    "name": "Skyrim Claude Code Toolkit",
+    "name": "Skyrim Codex Toolkit",
 
     "build": { "dockerfile": "Dockerfile" },
 

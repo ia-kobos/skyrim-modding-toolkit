@@ -29,11 +29,11 @@ jobs:
           echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
 
       # The zip is what users actually extract into their Skyrim folder, so it
-      # must contain the dotfiles (.claude/) and nothing from git.
+      # must contain the Codex skill directory and nothing from git.
       - name: Build the install zip
         run: |
           set -euo pipefail
-          NAME="skyrimvr-claude-toolkit-${{ steps.tag.outputs.version }}"
+          NAME="skyrim-codex-modding-toolkit-${{ steps.tag.outputs.version }}"
           mkdir -p "/tmp/$NAME"
           # tests/ is dev-only: it runs in CI from the repo and has no business
           # in the folder users extract into their Skyrim install. Note this is
@@ -44,7 +44,10 @@ jobs:
                 --exclude '.venv' --exclude '__pycache__' --exclude '.pytest_cache' \
                 ./ "/tmp/$NAME/"
           test ! -d "/tmp/$NAME/tests" || { echo "::error::tests/ leaked into the release payload"; exit 1; }
-          test -d "/tmp/$NAME/.claude/hooks" || { echo "::error::.claude/ missing from payload"; exit 1; }
+          test -f "/tmp/$NAME/AGENTS.md" || { echo "::error::AGENTS.md missing from payload"; exit 1; }
+          test -d "/tmp/$NAME/.agents/skills" || { echo "::error::.agents/skills missing from payload"; exit 1; }
+          test ! -e "/tmp/$NAME/CLAUDE.md" || { echo "::error::CLAUDE.md leaked into payload"; exit 1; }
+          test ! -d "/tmp/$NAME/.claude" || { echo "::error::.claude leaked into payload"; exit 1; }
           (cd /tmp && zip -qr "$NAME.zip" "$NAME")
           mv "/tmp/$NAME.zip" .
           unzip -l "$NAME.zip" | tail -5

@@ -37,13 +37,6 @@ MUTATION_IGNORE = shutil.ignore_patterns(
 MUTATIONS = [
     pytest.param(
         "setup.sh",
-        "JQ_PATH=$(printf '%s' " + '"$JQ_PATH"' + " | tr '" + BS + "134' '/')",
-        "",
-        "tests/test_jq_path.py",
-        id="jq-path-normalization",
-    ),
-    pytest.param(
-        "setup.sh",
         "      | sed 's/^@ByteArray(" + BS + "(.*" + BS + "))$/" + BS + "1/'",
         "",
         "tests/test_setup_paths.py::test_byte_array_wrapping_is_unwrapped",

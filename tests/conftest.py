@@ -3,9 +3,9 @@
 Every test gets its own copy of the repo in a temp dir and runs the *real*
 `setup.sh` against it, then asserts on what setup.sh **wrote** -- never on what
 it printed. Log text is cosmetic; the written paths are the contract. That
-distinction is exactly what the `setup-smoke` CI job got wrong: it ran setup.sh
-and then only checked that settings.json parsed, so every path bug this toolkit
-has ever shipped would have passed it.
+distinction is exactly what the original `setup-smoke` CI job got wrong: it ran
+setup.sh and checked only the exit code, so every path bug this toolkit had
+shipped would have passed it.
 
 Fixtures are *generated*, not committed as literal directories: MO2 detection
 compares absolute paths against the game root, so the layout has to be built
@@ -22,7 +22,6 @@ from pathlib import Path
 import pytest
 
 REPO = Path(__file__).resolve().parent.parent
-BIN = Path(__file__).resolve().parent / "bin"
 BS = chr(92)  # backslash, spelled this way to keep escapes out of this file
 
 
@@ -63,9 +62,8 @@ def _resolve_bash() -> str:
 
 BASH = _resolve_bash()
 
-# setup.sh shells out to `winget install` when it cannot find jq, which would be
-# a slow, network-dependent step that can hang a CI run. Every invocation is
-# capped so a stuck install fails the test instead of the job.
+# Every setup invocation is capped so an unexpected installer or prompt fails
+# the test instead of hanging the job.
 SETUP_TIMEOUT = 240
 
 IGNORE = shutil.ignore_patterns(
@@ -104,17 +102,14 @@ def game_root_win(game: Path) -> str:
     return r.stdout.strip()
 
 
-def run_setup(cwd: Path, env_overrides: dict | None = None, shim_path: bool = False):
+def run_setup(cwd: Path, env_overrides: dict | None = None):
     """Run the real setup.sh against `cwd`. Returns a CompletedProcess.
 
-    `shim_path` puts tests/bin first on PATH, which is how a test takes control
-    of an external command setup.sh depends on (`which`, `powershell`) without
-    adding a test-only seam to the shipped script.
+    Environment overrides let tests model Windows and MO2 layouts without
+    adding test-only seams to the shipped script.
     """
     env = dict(os.environ)
     env.setdefault("USERNAME", "testuser")
-    if shim_path:
-        env["PATH"] = f"{BIN}{os.pathsep}{env['PATH']}"
     if env_overrides:
         env.update({k: str(v) for k, v in env_overrides.items()})
     return subprocess.run(
@@ -129,24 +124,13 @@ def run_setup(cwd: Path, env_overrides: dict | None = None, shim_path: bool = Fa
 # reading what setup.sh wrote
 # --------------------------------------------------------------------------
 
-def claude_md(game: Path) -> str:
-    return (game / "CLAUDE.md").read_text(encoding="utf-8")
-
-
-def hook_jq_lines(game: Path) -> dict[str, str]:
-    """The `JQ="..."` line from every hook setup.sh configures."""
-    found: dict[str, str] = {}
-    for hook in sorted((game / ".claude" / "hooks").glob("*.sh")):
-        for line in hook.read_text(encoding="utf-8").splitlines():
-            if line.startswith("JQ="):
-                found[hook.name] = line.strip()
-                break
-    return found
+def agents_md(game: Path) -> str:
+    return (game / "AGENTS.md").read_text(encoding="utf-8")
 
 
 def key_path(game: Path, label: str) -> str:
-    """Pull one `- **Label**: `value`` line out of the emitted CLAUDE.md."""
-    for line in claude_md(game).splitlines():
+    """Pull one `- **Label**: `value`` line out of the emitted AGENTS.md."""
+    for line in agents_md(game).splitlines():
         if line.startswith(f"- **{label}**"):
             return line
     return ""

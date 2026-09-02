@@ -1,8 +1,6 @@
-# User-specific settings (contains local paths)
-.claude/settings.local.json
-
-# Backups (generated at runtime)
-.claude/backups/
+# Toolkit-generated local state
+.toolkit/backups/
+.toolkit/baseline_checksums.txt
 
 # Node modules
 node_modules/

@@ -89,7 +89,7 @@ jobs:
         run: npm test
 
   toolkit:
-    name: Claude Code config
+    name: Codex toolkit config
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -97,10 +97,10 @@ jobs:
         with:
           python-version-file: .python-version
 
-      - name: settings JSON parses
+      - name: JSON files parse
         run: |
           fail=0
-          for f in .claude/settings.json .claude/settings.local.json.example .config/dotnet-tools.json package.json; do
+          for f in .config/dotnet-tools.json package.json; do
             [ -f "$f" ] || continue
             python -c "import json,sys; json.load(open(sys.argv[1]))" "$f" \
               || { echo "::error file=$f::invalid JSON"; fail=1; }
@@ -126,35 +126,14 @@ jobs:
           print('devcontainer.json OK')
           PY
 
-      # A hook whose script path is wrong does not error at runtime -- it silently
-      # never fires. For a safety toolkit that is the worst failure mode there is.
-      - name: Every hook command points at a file that exists
-        run: |
-          python - <<'PY'
-          import json, re, sys, os
-          cfg = json.load(open('.claude/settings.json'))
-          missing, checked = [], 0
-          for event, matchers in cfg.get('hooks', {}).items():
-              for m in matchers:
-                  for h in m.get('hooks', []):
-                      for path in re.findall(r'\$CLAUDE_PROJECT_DIR/([^"\']+)', h.get('command', '')):
-                          checked += 1
-                          if not os.path.isfile(path):
-                              missing.append(f'{event}: {path}')
-          for m in missing:
-              print(f'::error::hook script not found -> {m}')
-          print(f'checked {checked} hook paths')
-          sys.exit(1 if missing else 0)
-          PY
-
       # A SKILL.md without name+description frontmatter is silently ignored, and a
       # name that does not match its directory never resolves.
-      - name: Skill frontmatter is well-formed
+      - name: Codex skill frontmatter is well-formed
         run: |
           python - <<'PY'
           import glob, os, re, sys
           fail = False
-          files = sorted(glob.glob('.claude/skills/*/SKILL.md'))
+          files = sorted(glob.glob('.agents/skills/*/SKILL.md'))
           if not files:
               print('::error::no skills found'); sys.exit(1)
           for f in files:
@@ -172,9 +151,18 @@ jobs:
                   if name.group(1) != want:
                       print(f'::error file={f}::name "{name.group(1)}" != directory "{want}"')
                       fail = True
+              for legacy in ('argument-hint:', 'paths:', 'user-invocable:'):
+                  if re.search(rf'^{re.escape(legacy)}', m.group(1), re.M):
+                      print(f'::error file={f}::unsupported Claude frontmatter: {legacy}')
+                      fail = True
           print(f'checked {len(files)} skills')
           sys.exit(1 if fail else 0)
           PY
+
+      - name: Claude runtime surfaces are absent
+        run: |
+          test ! -e CLAUDE.md || { echo "::error::CLAUDE.md must not ship on the Codex branch"; exit 1; }
+          test ! -d .claude || { echo "::error::.claude must not ship on the Codex branch"; exit 1; }
 
       - name: Relative links in Markdown resolve
         run: |
@@ -203,7 +191,7 @@ jobs:
       - name: Install into a fake game directory
         run: |
           set -euo pipefail
-          sudo apt-get update -qq && sudo apt-get install -y -qq jq rsync
+          sudo apt-get update -qq && sudo apt-get install -y -qq rsync
           GAME=/tmp/fake-skyrim
           mkdir -p "$GAME"
           # setup.sh prompts interactively if it cannot find the exe, so stub it.
@@ -211,39 +199,35 @@ jobs:
           rsync -a --exclude '.git' ./ "$GAME/"
           cd "$GAME"
           bash setup.sh < /dev/null
-          test -f .claude/settings.json || { echo "::error::settings.json missing after setup"; exit 1; }
-          jq empty .claude/settings.json
+          test -f AGENTS.md || { echo "::error::AGENTS.md missing after setup"; exit 1; }
+          test -d .agents/skills || { echo "::error::.agents/skills missing after setup"; exit 1; }
+          test -d .toolkit/backups || { echo "::error::.toolkit/backups missing after setup"; exit 1; }
 
       - name: Running setup twice is safe
         run: |
           set -euo pipefail
           cd /tmp/fake-skyrim
           bash setup.sh < /dev/null
-          jq empty .claude/settings.json
+          test -f AGENTS.md
 
-      # Running setup.sh and only checking that settings.json parses is close to
-      # a false green: every path bug this toolkit has shipped would pass it.
+      # Running setup.sh and only checking its exit code is close to a false
+      # green: every path bug this toolkit has shipped would pass it.
       # These assert on what setup.sh actually WROTE. Deeper coverage lives in
       # the `behavior` job below; this keeps the smoke test honest on its own.
       - name: setup.sh wrote usable paths, not just valid JSON
         run: |
           set -euo pipefail
           cd /tmp/fake-skyrim
-          leftover=$(grep -nE '\{\{[A-Z_]+\}\}' CLAUDE.md || true)
+          leftover=$(grep -nE '\{\{[A-Z_]+\}\}' AGENTS.md || true)
           if [ -n "$leftover" ]; then
-            echo "::error::unsubstituted placeholders remain in CLAUDE.md"
+            echo "::error::unsubstituted placeholders remain in AGENTS.md"
             echo "$leftover"
             exit 1
           fi
-          grep -q '^- \*\*Game root\*\*' CLAUDE.md \
+          grep -q '^- \*\*Game root\*\*' AGENTS.md \
             || { echo "::error::no Game root line written"; exit 1; }
-          grep -q '^- \*\*Mod manager\*\*' CLAUDE.md \
+          grep -q '^- \*\*Mod manager\*\*' AGENTS.md \
             || { echo "::error::no Mod manager line written"; exit 1; }
-          for h in .claude/hooks/*.sh; do
-            if grep -q '{{JQ_PATH}}' "$h"; then
-              echo "::error file=$h::jq placeholder was never substituted"; exit 1
-            fi
-          done
 
   behavior:
     name: Behavioral tests (${{ matrix.os }})
@@ -274,18 +258,6 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version-file: .node-version
-
-      # jq must resolve, or setup.sh reaches its `winget install` branch -- a
-      # slow, network-dependent step that can hang the runner.
-      - name: Ensure jq is on PATH
-        run: |
-          if command -v jq >/dev/null 2>&1; then jq --version; exit 0; fi
-          if [ "$RUNNER_OS" = "Windows" ]; then
-            choco install jq -y --no-progress
-          else
-            sudo apt-get update -qq && sudo apt-get install -y -qq jq
-          fi
-          command -v jq >/dev/null 2>&1 || { echo "::error::jq still missing"; exit 1; }
 
       - name: Install pytest
         run: python -m pip install --quiet --disable-pip-version-check pytest==8.0.0

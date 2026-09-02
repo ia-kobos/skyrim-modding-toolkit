@@ -2,7 +2,7 @@
 # Wrapper for the Spriggit global tool (spriggit.cli 0.40.0).
 #
 # Spriggit uses the --OutputPath as a scratch/move target; a deeply-nested path
-# (e.g. the claude scratchpad) trips a Windows long-path/permission failure
+# (e.g. a deeply nested agent scratch directory) trips a Windows long-path/permission failure
 # (System.UnauthorizedAccessException). This wrapper runs the whole operation in a
 # SHALLOW temp workspace (C:/Temp/spriggit-work/<rand>) and copies the result back
 # to the caller's requested --OutputPath, so any path works.

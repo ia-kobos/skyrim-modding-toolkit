@@ -8,7 +8,9 @@
 
 GAME_DIR="${GAME_DIR:-$(pwd)}"
 CONFIG_DIR="${CONFIG_DIR:-$HOME/Documents/My Games/Skyrim VR}"
-OUTPUT="$GAME_DIR/.claude/baseline_checksums.txt"
+OUTPUT="$GAME_DIR/.toolkit/baseline_checksums.txt"
+
+mkdir -p "$GAME_DIR/.toolkit"
 
 echo "Generating baseline checksums..."
 echo "Game dir:   $GAME_DIR"
@@ -16,7 +18,6 @@ echo "Config dir: $CONFIG_DIR"
 echo ""
 
 echo "# Baseline checksums generated $(date '+%Y-%m-%d %H:%M:%S')" > "$OUTPUT"
-echo "# Compare with: diff <(bash scripts/generate-baseline.sh --stdout) .claude/baseline_checksums.txt" >> "$OUTPUT"
 echo "" >> "$OUTPUT"
 
 # INI configs
@@ -45,7 +46,7 @@ LO_DIR="$HOME/AppData/Local/Skyrim VR"
 # Project files
 echo "" >> "$OUTPUT"
 echo "## Project Files" >> "$OUTPUT"
-sha256sum "$GAME_DIR/CLAUDE.md" >> "$OUTPUT" 2>/dev/null
+sha256sum "$GAME_DIR/AGENTS.md" >> "$OUTPUT" 2>/dev/null
 sha256sum "$GAME_DIR/KNOWLEDGEBASE.md" >> "$OUTPUT" 2>/dev/null
 
 LINES=$(wc -l < "$OUTPUT")

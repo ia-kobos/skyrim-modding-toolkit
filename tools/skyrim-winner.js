@@ -12,7 +12,7 @@
 // and the script will never see it. Proven live -- the real MUSCombat chain
 // contains Skyrim Extended Cut, which the existing hand-rolled script's
 // 7-plugin list omitted. Worse, a short list can silently load NOTHING and
-// still resolve (CLAUDE.md #10), giving a confident answer from an empty tree.
+// still resolve (see the skyrim-winner section in AGENTS.md), giving a confident answer from an empty tree.
 // This always loads the full active order. Measured cost: ~4s.
 //
 // Usage:
@@ -33,7 +33,7 @@
 // package or from a local tools/xelib/xelib.js, whichever is installed.
 //
 // NOTE: node's own exit code is unreliable here -- koffi's DLL is still
-// resident when stdio flushes, so it exits 127 on full success (CLAUDE.md #12).
+// resident when stdio flushes, so it exits 127 on full success (AGENTS.md skyrim-winner notes).
 // Judge the RESULT: line, or use skyrim-winner.sh which does it for you.
 
 const path = require('path');

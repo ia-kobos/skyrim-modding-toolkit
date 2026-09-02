@@ -1,12 +1,11 @@
 ---
 name: port-to-vr
 description: Guided checklist for porting an SSE-only mod to Skyrim VR
-argument-hint: "[mod name or path]"
 ---
 
 # Port SSE Mod to VR
 
-Systematically check the mod specified by `$ARGUMENTS` against every known VR incompatibility. Consult `KNOWLEDGEBASE.md` for full details on each item.
+Systematically check the target mod identified in the user's request against every known VR incompatibility. Consult `KNOWLEDGEBASE.md` for full details on each item.
 
 ## Step 1: SKSE Dependency Check
 
@@ -59,7 +58,7 @@ Serialize with Spriggit and check:
 - [ ] Casting type consistency on all spells (all effects must match)
 - [ ] ONAM subrecords if ESM-flagged
 - [ ] ESL FormID range (xx000800-xx000FFF)
-- [ ] VMAD script properties → prefer `GetFormFromFile()` to minimize properties
+- [ ] VMAD script properties → keep required records in the patch/plugin and minimize attached properties; avoid soft dependencies on other mods
 
 ## Step 8: Create VR Patch
 

@@ -10,7 +10,7 @@ import subprocess
 
 from conftest import REPO
 
-PROMPT_START = "I just installed the Skyrim Claude Code Modding Toolkit"
+PROMPT_START = "I just installed the Skyrim Codex Modding Toolkit"
 
 # The canonical copy, and the two files that embed it.
 PROMPT_SOURCES = [

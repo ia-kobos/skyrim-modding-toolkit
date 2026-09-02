@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased — Codex branch
+
+### Changed
+
+- Made `AGENTS.md` and `.agents/skills/` the canonical Codex instruction and skill surfaces.
+- Removed the Claude Code settings, hooks, and duplicated instruction file.
+- Updated setup, CI, release packaging, tests, metadata, and user documentation for Codex.
+- Replaced automatic-hook claims with explicit safety rules, preview-first workflows, and honest backup guidance.
+
 ## v3.8.1 — 2026-08-27
 
 ### Fixed

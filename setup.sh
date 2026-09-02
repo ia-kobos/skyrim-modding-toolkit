@@ -1,5 +1,5 @@
 #!/bin/bash
-# Skyrim Claude Code Toolkit -- Setup Script
+# Skyrim Codex Toolkit -- Setup Script
 #
 # This script is designed to be run FROM your Skyrim folder, after
 # extracting the toolkit zip into it. It configures everything in-place.
@@ -10,15 +10,15 @@ set -e
 
 GAME_DIR="$(pwd)"
 USERNAME="$(whoami)"
-# Native-Windows form of the game dir (C:/...), for paths we WRITE into CLAUDE.md.
-# `pwd` under Git Bash/MSYS returns an MSYS path (/c/...) that Claude's file tools and
+# Native-Windows form of the game dir (C:/...), for paths we WRITE into AGENTS.md.
+# `pwd` under Git Bash/MSYS returns an MSYS path (/c/...) that Codex's file tools and
 # PowerShell can't open; `pwd -W` returns the Windows form. Keep $GAME_DIR (MSYS) for the
 # filesystem work below -- both forms work there -- and use this one only for substitution.
 GAME_ROOT_WIN=$(pwd -W 2>/dev/null || pwd)
 GAME_ROOT_WIN=$(printf '%s' "$GAME_ROOT_WIN" | tr '\134' '/')
 
 echo "============================================"
-echo " Skyrim Claude Code Toolkit -- Setup"
+echo " Skyrim Codex Toolkit -- Setup"
 echo "============================================"
 echo ""
 echo "Game directory: $GAME_ROOT_WIN"
@@ -35,50 +35,11 @@ if [ ! -f "$GAME_DIR/SkyrimVR.exe" ] && [ ! -f "$GAME_DIR/SkyrimSE.exe" ]; then
 fi
 
 # --- Verify toolkit files are present ---
-if [ ! -f "$GAME_DIR/KNOWLEDGEBASE.md" ] || [ ! -f "$GAME_DIR/.claude/hooks/protect-bash.sh" ]; then
+if [ ! -f "$GAME_DIR/KNOWLEDGEBASE.md" ] || [ ! -f "$GAME_DIR/AGENTS.md" ] || [ ! -d "$GAME_DIR/.agents/skills" ]; then
     echo "ERROR: Toolkit files not found in this directory."
     echo "Make sure you extracted the toolkit zip into your Skyrim folder first."
     exit 1
 fi
-
-# --- Detect jq ---
-echo "Checking for jq..."
-JQ_PATH=$(which jq 2>/dev/null || echo "")
-if [ -z "$JQ_PATH" ]; then
-    # Try common Windows locations
-    for p in \
-        "/c/Users/$USERNAME/AppData/Local/Microsoft/WinGet/Links/jq.exe" \
-        "/c/ProgramData/chocolatey/bin/jq.exe" \
-        "/usr/bin/jq"; do
-        if [ -f "$p" ]; then
-            JQ_PATH="$p"
-            break
-        fi
-    done
-fi
-
-if [ -z "$JQ_PATH" ]; then
-    echo ""
-    echo "jq not found. It's needed for the safety hooks."
-    echo "Installing jq via winget..."
-    winget install jqlang.jq --accept-source-agreements --accept-package-agreements 2>/dev/null || {
-        echo ""
-        echo "ERROR: Could not auto-install jq."
-        echo "Please install it manually: winget install jqlang.jq"
-        echo "Then re-run: bash setup.sh"
-        exit 1
-    }
-    # Re-detect after install
-    JQ_PATH=$(which jq 2>/dev/null || echo "/c/Users/$USERNAME/AppData/Local/Microsoft/WinGet/Links/jq.exe")
-fi
-# JQ_PATH is substituted into every hook via sed, and GNU sed reads backslash
-# sequences in replacement text as escapes -- \U upper-cases the rest,
-# \t becomes a literal tab -- so a Windows-style path silently corrupts all
-# four safety hooks and they fail open. Same defect fixed for LOCALAPPDATA and
-# Documents in v3.2.1; this is the one path that fix missed. Normalized here,
-# after all three assignment branches above have converged.
-JQ_PATH=$(printf '%s' "$JQ_PATH" | tr '\134' '/')
-echo "  Found jq: $JQ_PATH"
 
 # --- Detect Node.js (needed for xeditlib; auto-install) ---
 echo ""
@@ -167,7 +128,7 @@ LOADORDER_DIR="$LOCALAPPDATA_DIR/$SKYRIM_FOLDER"
 # MO2 has NO flat Data/ folder on disk. It builds a virtual one at launch by merging each enabled
 # mod's own folder. So on an MO2 setup the game's Data/ holds the stock game and almost none of the
 # user's mods, and the profile -- not Documents -- is where the INIs and load order live. Getting
-# this wrong means every path we write into CLAUDE.md points somewhere real but nearly empty.
+# this wrong means every path we write into AGENTS.md points somewhere real but nearly empty.
 MO2_INSTANCE=""; MO2_MODS=""; MO2_PROFILE=""; MO2_PROFILE_DIR=""; MO2_OVERWRITE=""
 
 ini_get() { # $1=file $2=section $3=key  -> value, QSettings-unescaped, forward-slashed
@@ -205,11 +166,11 @@ find_mo2_instance() {
 if MO2_INI="$(find_mo2_instance)"; then
     MO2_INSTANCE="$(dirname "$MO2_INI")"
     # Normalize to a real Windows-style path -- the sibling probe above resolves through `..`, and
-    # a `STOCK GAME/../MO2` instance path written into CLAUDE.md is correct but unreadable.
+    # a `STOCK GAME/../MO2` instance path written into AGENTS.md is correct but unreadable.
     # `pwd -W` gives the Windows form but does not exist off MSYS, so fall back to
     # plain `pwd` (matching line 17) before giving up on the raw value. Without
     # that fallback the `..` survives everywhere `pwd -W` is unavailable -- which
-    # now includes the shipped Linux devcontainer -- and CLAUDE.md gets an
+    # now includes the shipped Linux devcontainer -- and AGENTS.md gets an
     # instance path like `STOCK GAME/../MO2`: correct, but unreadable.
     MO2_INSTANCE="$( { cd "$MO2_INSTANCE" 2>/dev/null && { pwd -W 2>/dev/null || pwd; } ; } || echo "$MO2_INSTANCE")"
     # base_directory is optional. It can also be written as the literal %BASE_DIR% token, which is
@@ -257,29 +218,16 @@ if [ -d "$CONFIG_DIR" ]; then
     echo "  Found Skyrim configs in: $CONFIG_DIR/"
 else
     echo "  WARNING: Skyrim config not found at $CONFIG_DIR"
-    echo "  You may need to update paths in CLAUDE.md manually."
+    echo "  You may need to update paths in AGENTS.md manually."
 fi
 
-# --- Configure hook scripts (replace jq placeholder) ---
+# --- Configure AGENTS.md (replace path placeholders) ---
 echo ""
-echo "Configuring safety hooks..."
-for hook in protect-bash.sh protect-files.sh backup-before-edit.sh snapshot-before-tool.sh; do
-    if grep -q '{{JQ_PATH}}' "$GAME_DIR/.claude/hooks/$hook"; then
-        sed -i "s|{{JQ_PATH}}|$JQ_PATH|g" "$GAME_DIR/.claude/hooks/$hook"
-        echo "  Configured: .claude/hooks/$hook"
-    else
-        echo "  Already configured: .claude/hooks/$hook"
-    fi
-done
-
-# --- Configure CLAUDE.md (replace path placeholders) ---
-echo ""
-echo "Configuring CLAUDE.md..."
-if grep -q '{{GAME_ROOT}}' "$GAME_DIR/CLAUDE.md"; then
-    sed -i "s|{{GAME_ROOT}}|$GAME_ROOT_WIN|g" "$GAME_DIR/CLAUDE.md"
-    sed -i "s|{{CONFIG_DIR}}|$CONFIG_DIR|g" "$GAME_DIR/CLAUDE.md"
-    sed -i "s|{{LOADORDER_DIR}}|$LOADORDER_DIR|g" "$GAME_DIR/CLAUDE.md"
-    sed -i "s|{{SKYRIM_FOLDER}}|$SKYRIM_FOLDER|g" "$GAME_DIR/CLAUDE.md"
+echo "Configuring AGENTS.md..."
+if grep -q '{{GAME_ROOT}}' "$GAME_DIR/AGENTS.md"; then
+    sed -i "s|{{GAME_ROOT}}|$GAME_ROOT_WIN|g" "$GAME_DIR/AGENTS.md"
+    sed -i "s|{{CONFIG_DIR}}|$CONFIG_DIR|g" "$GAME_DIR/AGENTS.md"
+    sed -i "s|{{LOADORDER_DIR}}|$LOADORDER_DIR|g" "$GAME_DIR/AGENTS.md"
 
     # Mod-manager block. Built in a temp file and spliced in with sed's `r`, so no amount of
     # punctuation in a path can break the substitution.
@@ -309,7 +257,7 @@ MMEOF
   so `Data/` is the real, merged view of everything installed.
 MMEOF
     fi
-    sed -i -e "/{{MOD_MANAGER_PATHS}}/{r $MM_BLOCK" -e "d}" "$GAME_DIR/CLAUDE.md"
+    sed -i -e "/{{MOD_MANAGER_PATHS}}/{r $MM_BLOCK" -e "d}" "$GAME_DIR/AGENTS.md"
     rm -f "$MM_BLOCK"
 
     echo "  Configured with your paths (Skyrim folder: $SKYRIM_FOLDER)."
@@ -335,15 +283,8 @@ if [ -f "$GAME_DIR/.devcontainer/devcontainer.json" ] && grep -q '{{DEVCONTAINER
     echo "  Run ./devshell-docker.sh (Docker only) or ./devshell.sh (needs the devcontainer CLI)."
 fi
 
-# --- Ensure backup directory exists ---
-mkdir -p "$GAME_DIR/.claude/backups"
-
-# --- Copy settings.local.json.example if no settings.local.json exists ---
-if [ ! -f "$GAME_DIR/.claude/settings.local.json" ] && [ -f "$GAME_DIR/.claude/settings.local.json.example" ]; then
-    cp "$GAME_DIR/.claude/settings.local.json.example" "$GAME_DIR/.claude/settings.local.json"
-    echo ""
-    echo "  Copied settings.local.json.example -> settings.local.json (customize allowed commands later)"
-fi
+# --- Ensure the manual backup directory exists ---
+mkdir -p "$GAME_DIR/.toolkit/backups"
 
 # --- Optional: Nexus API integration status (non-blocking) ---
 echo ""
@@ -360,7 +301,7 @@ else
     echo "    To enable: get a free Personal API Key at"
     echo "      https://www.nexusmods.com/users/myaccount?tab=api"
     echo "    then save it (one line) to tools/.nexus_api_key  (already gitignored),"
-    echo "    or set the NEXUS_API_KEY environment variable. Claude can do this for you on request."
+    echo "    or set the NEXUS_API_KEY environment variable. Codex can do this for you on request."
 fi
 
 echo ""
@@ -369,26 +310,23 @@ echo " Setup Complete!"
 echo "============================================"
 echo ""
 echo "Installed and configured:"
-echo "  CLAUDE.md                        -- Project instructions (paths filled in)"
+echo "  AGENTS.md                        -- Codex project instructions (paths filled in)"
 echo "  KNOWLEDGEBASE.md                 -- 1,300+ lines of Skyrim modding knowledge"
-echo "  .claude/settings.json            -- Hook configuration"
-echo "  .claude/hooks/protect-bash.sh    -- Guards dangerous commands"
-echo "  .claude/hooks/protect-files.sh   -- Guards file edits"
-echo "  .claude/hooks/backup-before-edit.sh -- Auto-backups (Edit/Write) with audit trail"
-echo "  .claude/hooks/snapshot-before-tool.sh -- Auto-snapshots .psc/.pex before Bash commands"
+echo "  .agents/skills/                  -- Skyrim workflows available to Codex"
 echo "  tools/                           -- Helper scripts (AutoMod wrapper, esp-verify, NIF tools, nexus.sh, resaver-cli.sh)"
-echo "  .claude/backups/                 -- Backup storage (empty for now)"
+echo "  .toolkit/backups/                -- Manual backup storage (empty for now)"
 echo ""
-echo "The safety hooks are now active. Claude Code will:"
-echo "  - Ask permission before editing any game file"
-echo "  - Block direct writes to ESP/ESM/BSA files"
-echo "  - Automatically back up files before modifying them"
-echo "  - Snapshot your active scripts before running external tools"
+echo "Codex will read AGENTS.md and the repository skills when working in this folder."
+echo "Safety rules are explicit instructions, not automatic filesystem hooks:"
+echo "  - Review and approve changes before applying them"
+echo "  - Never write directly to ESP/ESM/ESL/BSA/BA2 files"
+echo "  - Create a verified backup before editing live game or configuration files"
+echo "  - Snapshot active Papyrus scripts before experimental changes"
 echo ""
 echo "--------------------------------------------"
 echo " Optional modding tools (install as needed)"
 echo "--------------------------------------------"
-echo "These are NOT bundled. Ask Claude to set up any you want, or install yourself:"
+echo "These are NOT bundled. Ask Codex to set up any you want, or install them yourself:"
 echo "  xeditlib     -- programmatic ESP read/write:  npm install github:WingedGuardian/xeditlib"
 echo "                  (run from THIS toolkit root so the bundled tools/ + examples/ scripts resolve it)"
 echo "  Champollion  -- Papyrus .pex -> .psc:         github.com/Orvid/Champollion/releases"
@@ -415,7 +353,7 @@ echo "  DevBench     -- LIVE in-game inspect/console/Papyrus while you play:"
 echo "                  Nexus mod 181326 (alandtse). This one is a MOD, not a tools/ utility --"
 echo "                  install it with your mod manager (Vortex/MO2), not by hand into Data/."
 echo "                  dev-only, no gameplay change, no save data. Drive it via tools/devbench-cli.sh"
-echo "                  (bundled wrapper). Lets Claude test its own fixes in the running game instead"
+echo "                  (bundled wrapper). Lets Codex test its own fixes in the running game instead"
 echo "                  of asking you to launch, trigger, and report back."
 echo ""
-echo "You're ready to go! Start asking Claude about your mods."
+echo "You're ready to go! Start asking Codex about your mods."

@@ -1,63 +1,29 @@
 # Safety Philosophy
 
-## Why Safety Matters in Skyrim Modding
+## Why Safety Matters
 
-A modded Skyrim installation with hundreds of plugins is a complex, interdependent system. Small changes can have cascading effects:
+A modded Skyrim installation is an interdependent system. A bad plugin edit, an incorrect path, or an overwritten file can cause crashes or hours of recovery work. VR also has compatibility traps that do not exist in flat Skyrim.
 
-- A bad ESP edit can corrupt save files permanently
-- An incorrect INI setting can cause crashes with no obvious error
-- Overwriting a critical file with no backup means hours of reinstallation
-- VR-specific quirks mean "works in SSE" doesn't mean "works in VR"
+The toolkit therefore uses several independent safety layers:
 
-This toolkit was built after experiencing all of these. Every safety feature exists because something went wrong without it.
+1. **Known pitfalls:** `KNOWLEDGEBASE.md` records engine quirks and tested workflows.
+2. **Project rules:** `AGENTS.md` requires investigation, explicit assumptions, and a confidence rating before changes.
+3. **Human control:** Codex asks for approval when its environment or the requested action requires it. Keep game-file changes tightly scoped.
+4. **Preview before write:** ESP and asset workflows should produce a read-only preview before an approved write pass.
+5. **Tool-specific validation:** Binary formats go through xEdit, Spriggit, the Creation Kit, or another format-aware tool rather than ordinary text editing.
+6. **Recoverable state:** Keep the mod manager's original downloads, version-control source projects, and manual backups of anything that cannot be regenerated.
 
-## Defense in Depth
+## Important Boundary
 
-The toolkit uses multiple layers of protection:
+This Codex edition does **not** install automatic filesystem hooks. `AGENTS.md` provides operating instructions, not an invisible enforcement layer. Codex approvals and sandboxing can add protection, but they do not replace backups or careful review.
 
-### Layer 1: Knowledge (KNOWLEDGEBASE.md)
-Before making any change, Claude is instructed to check the knowledgebase for known pitfalls. Many Skyrim modding errors are well-documented but easy to forget.
+## Practical Rules
 
-### Layer 2: Confidence Levels
-Claude must explicitly rate its confidence (0-100%) before proposing any change and list assumptions. This forces investigation before action.
+- Never work directly on the only copy of a plugin, save, mesh, or script.
+- Confirm the active game version, mod-manager instance, profile, and real source paths before editing.
+- Treat MO2's virtual filesystem separately from the physical stock `Data` folder.
+- Preview bulk operations and compare record references before and after risky plugin edits.
+- Validate generated binaries with an independent reader before launching the game.
+- Install actual mods through the user's mod manager; do not silently copy them into `Data`.
 
-### Layer 3: Hook Guards
-Four bash scripts intercept Claude's tool calls:
-
-- **protect-bash.sh** -- Blocks destructive commands, confirms file operations
-- **protect-files.sh** -- Blocks binary file writes, confirms all other edits
-- **backup-before-edit.sh** -- Copies every file before modification
-- **snapshot-before-tool.sh** -- Snapshots active Papyrus source/compiled scripts before any Bash command
-
-### Layer 4: Dry-Run Convention
-ESP modifications via xelib always use a two-pass workflow: read-only preview, then write only after human approval.
-
-### Layer 5: Audit Trail
-Every file modification is logged with timestamp, tool name, and backup location. If something goes wrong, you can trace exactly what changed and when.
-
-## Design Principles
-
-### 1. No Silent Modifications
-Every file change triggers a confirmation prompt or is blocked outright. There are no "auto-approved" edits to game files.
-
-### 2. Reversibility
-Every edit has a timestamped backup. The `restore-from-backup.sh` script makes recovery straightforward.
-
-### 3. Investigation First
-The confidence level system and investigation checklist ensure research happens before action. This prevents the most common class of errors: acting on incorrect assumptions about how Skyrim works.
-
-### 4. Binary Files Are Sacred
-ESP, ESM, ESL, BSA, and BA2 files cannot be written directly. They must go through proper tooling (xelib, Spriggit, Creation Kit). This prevents accidental corruption of binary formats.
-
-### 5. Continuous Improvement
-The "safety improvement loop" instruction in CLAUDE.md asks Claude to evaluate whether new hooks or protections are needed after every session. The `Hook Candidates` section in the knowledgebase tracks proposed improvements.
-
-## Customizing Safety
-
-The hook scripts are designed to be customized:
-
-- **Whitelist paths** you want Claude to edit freely (e.g., a working directory for scripts)
-- **Add new patterns** to the bash guard for commands specific to your workflow
-- **Adjust the confirmation threshold** -- some users may want less friction for frequently-edited files
-
-Edit the scripts in `.claude/hooks/` to match your workflow.
+`setup.sh` creates `.toolkit/backups/` as a local place for manual working backups. `scripts/generate-baseline.sh` can record checksums of the toolkit's core instruction files. Neither replaces a complete modlist or source backup.

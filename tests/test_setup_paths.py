@@ -1,14 +1,13 @@
-"""Behavioral tests for the paths setup.sh writes into CLAUDE.md.
+"""Behavioral tests for the paths setup.sh writes into AGENTS.md.
 
 Every test here is anchored to a bug this toolkit actually shipped. The
-structural CI added in v3.6 cannot catch any of them: `setup.sh` is valid bash
-in every case, and `setup-smoke` only checks that settings.json parses
-afterwards -- it never looks at a single path setup.sh wrote.
+structural CI cannot catch any of them: `setup.sh` is valid bash in every case,
+so the tests must inspect the paths it actually wrote.
 """
 
 from __future__ import annotations
 
-from conftest import claude_md, game_root_win, key_path, run_setup, write_mo2_ini
+from conftest import agents_md, game_root_win, key_path, run_setup, write_mo2_ini
 
 
 # ---------------------------------------------------------------- stock/Vortex
@@ -18,7 +17,7 @@ def test_stock_install_is_not_reported_as_mo2(game_dir):
     plain Vortex/stock install start claiming an instance."""
     r = run_setup(game_dir)
     assert r.returncode == 0, r.stdout + r.stderr
-    # Assert on the emitted "Mod manager" line, not the whole document: CLAUDE.md
+    # Assert on the emitted "Mod manager" line, not the whole document: AGENTS.md
     # documents MO2 in prose regardless of what was detected, so a naive
     # substring search over the file matches the docs and proves nothing.
     line = key_path(game_dir, "Mod manager")
@@ -27,8 +26,8 @@ def test_stock_install_is_not_reported_as_mo2(game_dir):
 
 
 def test_game_root_is_a_windows_path_not_an_msys_path(game_dir):
-    """Regression, v3.2.1: CLAUDE.md got `/c/Games/Skyrim` from bare `pwd`, a
-    form Claude's file tools and PowerShell cannot open. It must be the
+    """Regression, v3.2.1: AGENTS.md got `/c/Games/Skyrim` from bare `pwd`, a
+    form Codex's file tools and PowerShell cannot open. It must be the
     `C:/Games/Skyrim` form.
 
     On Linux `pwd -W` does not exist and a POSIX path is correct, so this
@@ -44,10 +43,10 @@ def test_game_root_is_a_windows_path_not_an_msys_path(game_dir):
 
 
 def test_no_placeholders_survive(game_dir):
-    """Any `{{...}}` left in CLAUDE.md is a substitution that silently did
+    """Any `{{...}}` left in AGENTS.md is a substitution that silently did
     nothing."""
     run_setup(game_dir)
-    text = claude_md(game_dir)
+    text = agents_md(game_dir)
     leftovers = [ln for ln in text.splitlines() if "{{" in ln and "}}" in ln]
     assert not leftovers, f"unsubstituted placeholders: {leftovers}"
 
@@ -77,22 +76,22 @@ def test_portable_mo2_instance_is_detected(portable_mo2):
     assert r.returncode == 0, r.stdout + r.stderr
     line = key_path(game, "Mod manager")
     assert "Mod Organizer 2" in line, f"portable instance not detected: {line!r}"
-    text = claude_md(game)
+    text = agents_md(game)
     assert "Nolvus Awakening" in text, "profile not resolved"
     assert "MODS/mods" in text.replace("\\", "/"), "mods path not written"
 
 
 def test_portable_mo2_instance_path_is_normalized(portable_mo2):
     """Regression, v3.5.4: the sibling probe resolves through `..`, which wrote
-    a correct-but-unreadable `STOCK GAME/../MO2` into CLAUDE.md."""
+    a correct-but-unreadable `STOCK GAME/../MO2` into AGENTS.md."""
     game, inst, mods = portable_mo2
     run_setup(game)
-    text = claude_md(game).replace("\\", "/")
+    text = agents_md(game).replace("\\", "/")
     assert "/../" not in text, "unnormalized `..` left in an emitted path"
 
 
 def test_profile_local_inis_win_over_documents(portable_mo2):
-    """When the MO2 profile carries its own INIs and load order, CLAUDE.md must
+    """When the MO2 profile carries its own INIs and load order, AGENTS.md must
     point at the profile -- not at Documents/My Games."""
     game, inst, mods = portable_mo2
     run_setup(game)
@@ -111,14 +110,14 @@ def test_byte_array_wrapping_is_unwrapped(portable_mo2):
     # Assert the MO2 branch was actually taken AND that the profile -- which is
     # only readable by unwrapping @ByteArray(...) -- landed on that line.
     #
-    # An earlier version of this test checked `"@ByteArray" not in claude_md()`
-    # and `"Nolvus Awakening" in claude_md()`. The mutation gate proved both
+    # An earlier version of this test checked `"@ByteArray" not in agents_md()`
+    # and `"Nolvus Awakening" in agents_md()`. The mutation gate proved both
     # pass vacuously when the unwrap is removed: detection then fails, so no MO2
     # block is written at all (hence no @ByteArray anywhere), and the profile
     # name still appears because it is part of the game directory path.
     assert "Mod Organizer 2" in line, f"@ByteArray broke detection: {line!r}"
     assert "Nolvus Awakening" in line, f"profile not unwrapped: {line!r}"
-    assert "@ByteArray" not in claude_md(game), "QSettings wrapper leaked through"
+    assert "@ByteArray" not in agents_md(game), "QSettings wrapper leaked through"
 
 
 def test_mo2_instance_ini_escape_hatch_works(portable_mo2, tmp_path):
@@ -145,7 +144,7 @@ def test_global_mo2_with_plain_values_still_detected(global_mo2):
     assert r.returncode == 0, r.stdout + r.stderr
     line = key_path(game, "Mod manager")
     assert "Mod Organizer 2" in line, f"global instance with plain values missed: {line!r}"
-    text = claude_md(game)
+    text = agents_md(game)
     assert "Default" in text
 
 

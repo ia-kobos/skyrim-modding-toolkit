@@ -1,5 +1,5 @@
 #!/bin/bash
-# nexus.sh -- tiny Nexus Mods API helper for the Skyrim Claude Code Toolkit.
+# nexus.sh -- tiny Nexus Mods API helper for the Skyrim Codex Toolkit.
 # Resolves your free Personal API Key (file first, then env) and queries the v1 API.
 # The key is NEVER printed. Get a key: https://www.nexusmods.com/users/myaccount?tab=api
 #

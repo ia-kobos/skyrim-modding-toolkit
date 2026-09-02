@@ -1,7 +1,6 @@
 ---
 name: create-mod
 description: Guided workflow for creating a new Skyrim mod from scratch using AutoMod CLI. Use when the user wants to build a new mod.
-argument-hint: "[mod description]"
 ---
 
 # Create New Mod Workflow
@@ -56,5 +55,5 @@ Review the record counts and verify everything was added correctly.
 
 - All effects on a spell must have the same casting type
 - ESL FormIDs must be in xx000800-xx000FFF range
-- Use `GetFormFromFile()` in scripts to avoid complex VMAD properties
+- Keep every required record in the mod's own plugin; do not use `GetFormFromFile()` to borrow records from another mod
 - Test in-game before distributing

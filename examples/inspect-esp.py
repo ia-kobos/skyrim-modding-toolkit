@@ -21,7 +21,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-# Must match .config/dotnet-tools.json and the version CLAUDE.md's Spriggit workflow uses --
+# Must match .config/dotnet-tools.json and the version AGENTS.md's Spriggit workflow uses --
 # --PackageVersion is REQUIRED whenever --PackageName is set, or Spriggit exits non-zero.
 SPRIGGIT_PACKAGE_VERSION = "0.40.0"
 

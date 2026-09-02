@@ -1,6 +1,6 @@
 ---
 name: skyrim-bsa
-description: Read, extract, create, and modify BSA/BA2 archives using AutoMod CLI.
+description: Read, extract, create, and modify BSA/BA2 archives with the AutoMod CLI — archive info, list with filters, validate integrity, and diff two archives, plus the guarded write commands. Use when the user wants to see what is inside an archive, extract or repack mod assets, check a BSA for corruption, or compare two archives.
 paths: "**/*.bsa,**/*.ba2"
 ---
 

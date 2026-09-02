@@ -1,6 +1,6 @@
 ---
 name: port-to-vr
-description: Guided checklist for porting an SSE-only mod to Skyrim VR
+description: Walk a seven-step checklist for porting an SSE-only mod to Skyrim VR, covering SKSE dependencies, Papyrus script audit, skeleton compatibility, physics and combat, UI and menus, the animation system, and ESP record checks. Use when the user wants to port a mod to VR, asks whether an SSE mod works in VR, or is debugging a mod that misbehaves only in VR.
 argument-hint: "[mod name or path]"
 ---
 

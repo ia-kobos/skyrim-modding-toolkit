@@ -1,6 +1,6 @@
 ---
 name: inspect-esp
-description: Inspect an ESP/ESM plugin file and show a summary of all records
+description: Inspect an ESP/ESM/ESL plugin and summarise its records, via Spriggit for readable output or xeditlib for deeper analysis. Use when the user asks what is inside a plugin, what a mod changes, to list or count its records, or to look at a plugin before editing it.
 argument-hint: <PluginName.esp>
 ---
 

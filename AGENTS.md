@@ -22,25 +22,36 @@ does not duplicate `CLAUDE.md`, so the two cannot drift apart.
 
 **Claude Code specific — you do not get these:**
 
-- `.claude/settings.json` and `.claude/hooks/` — the safety layer. These hooks are what block direct
-  writes to ESP/ESM/BSA files, require confirmation before editing anything in the game or config
-  directories, and auto-back-up every file before it is modified, with an audit trail.
+- `.claude/settings.json` and `.claude/hooks/` — the safety layer, four `PreToolUse` hooks. They deny
+  direct writes to `.esp/.esm/.esl/.bsa/.ba2`, prompt before edits to the Skyrim INIs, SKSE plugin
+  configs, load order files, Papyrus sources, and anything under the game directory, gate destructive
+  and game-directory `bash` commands, and copy every file edited through Edit/Write into
+  `.claude/backups/` with an audit trail.
 - `.claude/skills/` — packaged workflows.
 
 **Read that second list carefully.** On another agent the guardrails are simply absent. Nothing will
 stop a bad `rm`, a direct binary write into a plugin, or an unreviewed edit to a live INI. The
 knowledge and the tools carry over; the seatbelts do not.
 
+**The hooks ship as templates and are not self-installing.** Each contains a literal `{{JQ_PATH}}`
+that `setup.sh` substitutes with the local `jq`. Until that runs, `"$JQ"` is not a command, the hook's
+JSON parse yields empty, and the guard **exits 0 — allowing the call**. They fail *open*, not closed,
+so an uninstalled or half-installed safety layer looks exactly like a working one. Run `setup.sh`
+before trusting any of it.
+
 If you are not running under Claude Code, compensate deliberately:
 
-1. **Back up before you touch anything.** Copy the file first — the toolkit's own convention is
-   `.claude/backups/<descriptive-name>/`. Assume nothing is doing this for you.
+1. **Back up before you touch anything.** Copy the file first. The toolkit's own convention is a flat
+   `.claude/backups/<YYYYmmdd_HHMMSS>__<full-path-with-separators-replaced-by-underscores>`, appended
+   to `.claude/backups/AUDIT_LOG.txt`. Assume nothing is doing this for you.
 2. **Never write directly to `.esp` / `.esm` / `.esl` / `.bsa` / `.ba2`.** Use Spriggit (serialize to
    YAML, edit the YAML, deserialize) or xelib. A hand-edited plugin binary is a corrupted plugin.
 3. **Show the user the change before applying it**, especially for INIs, load order files, and
    anything under the game directory. The hooks normally force this pause; without them it is on you.
-4. **Snapshot `.psc` sources before experimenting.** They are not covered by any automatic backup even
-   under Claude Code, and reconstructing a working script from memory is miserable.
+4. **Snapshot `.psc` sources before experimenting.** Under Claude Code a `.psc` edited through
+   Edit/Write *is* backed up and *does* prompt first — but the backup hook only fires on those two
+   tools, so a script rewritten by the compiler, a shell redirect, or any other command is not
+   covered on any agent. Reconstructing a working script from memory is miserable.
 
 ## Ground rules that apply regardless of agent
 
